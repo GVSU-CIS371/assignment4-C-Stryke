@@ -1,81 +1,155 @@
 <template>
   <div>
-    <Beverage :isIced="beverageStore.currentTemp === 'Cold'" />
+    <Beverage :isIced="currentTemp === 'Cold'" />
+
     <ul>
+      <!-- Temperature -->
       <li>
-        <template v-for="temp in beverageStore.temps" :key="temp">
+        <template v-for="temp in Temps" :key="temp">
           <label>
             <input
               type="radio"
               name="temperature"
-              :id="`r${temp}`"
+              :id="`temp-${temp}`"
               :value="temp"
-              v-model="beverageStore.currentTemp"
+              v-model="currentTemp"
             />
             {{ temp }}
           </label>
         </template>
       </li>
-    </ul>
-    <ul>
-      <li>
-        <template v-for="b in beverageStore.bases" :key="b.id">
+
+      <!-- Base -->
+      <li v-if="Base.length">
+        <template v-for="base in Base" :key="base.id">
           <label>
             <input
               type="radio"
-              name="bases"
-              :id="`r${b.id}`"
-              :value="b"
-              v-model="beverageStore.currentBase"
+              name="base"
+              :id="`base-${base.id}`"
+              :value="base.id"
+              v-model="currentBaseId"
             />
-            {{ b.name }}
+            {{ base.name }}
+          </label>
+        </template>
+      </li>
+
+      <!-- Cream -->
+      <li v-if="Cream.length">
+        <template v-for="cream in Cream" :key="cream.id">
+          <label>
+            <input
+              type="radio"
+              name="cream"
+              :id="`cream-${cream.id}`"
+              :value="cream.id"
+              v-model="currentCreamId"
+            />
+            {{ cream.name }}
+          </label>
+        </template>
+      </li>
+
+      <!-- Syrup -->
+      <li v-if="Syrup.length">
+        <template v-for="syrup in Syrup" :key="syrup.id">
+          <label>
+            <input
+              type="radio"
+              name="syrup"
+              :id="`syrup-${syrup.id}`"
+              :value="syrup.id"
+              v-model="currentSyrupId"
+            />
+            {{ syrup.name }}
           </label>
         </template>
       </li>
     </ul>
-    <ul>
-      <li>
-        <template v-for="s in beverageStore.syrups" :key="s.id">
+
+    <!-- Actions -->
+    <div class="actions">
+      <ul>
+        <input v-model="newName" placeholder="Name your drink" />
+        <button @click="makeBeverage">Save</button>
+      </ul>
+
+      <ul class="Saved">
+        <template v-for="bev in savedBeverages" :key="bev.id">
           <label>
             <input
-              type="radio"
-              name="syrups"
-              :id="`r${s.id}`"
-              :value="s"
-              v-model="beverageStore.currentSyrup"
+              type="button"
+              :id="`saved-${bev.id}`"
+              :value="bev.name"
+              @click="showBeverage(bev.id)"
             />
-            {{ s.name }}
           </label>
+          <button @click="deleteBeverage(bev.id)">X</button>
         </template>
-      </li>
-    </ul>
-    <ul>
-      <li>
-        <template v-for="c in beverageStore.creamers" :key="c.id">
-          <label>
-            <input
-              type="radio"
-              name="creamers"
-              :id="`r${c.id}`"
-              :value="c"
-              v-model="beverageStore.currentCreamer"
-            />
-            {{ c.name }}
-          </label>
-        </template>
-      </li>
-    </ul>
-    <input type="text" placeholder="Beverage Name" />
-    <button>🍺 Make Beverage</button>
+      </ul>
+    </div>
   </div>
-  <div id="beverage-container" style="margin-top: 20px"></div>
+
+
 </template>
 
+
 <script setup lang="ts">
+import { ref, onMounted } from "vue";
 import Beverage from "./components/Beverage.vue";
+
 import { useBeverageStore } from "./stores/beverageStore";
+import { storeToRefs } from "pinia";
+
+// Computed wrappers for ID-based v-models
+import {
+  currentBaseId,
+  currentCreamId,
+  currentSyrupId,
+} from "./stores/beverageComputed";
+
+
 const beverageStore = useBeverageStore();
+
+const {
+  Temps,
+  Base,
+  Cream,
+  Syrup,
+  currentTemp,
+  savedBeverages,
+} = storeToRefs(beverageStore);
+
+
+const newName = ref("");
+const loading = ref(true);
+
+
+onMounted(async () => {
+  await beverageStore.loadIngredients();
+
+  // Ingredients loaded → allow rendering
+  loading.value = false;
+});
+
+
+function makeBeverage() {
+  if (!newName.value.trim()) return;
+
+  beverageStore.makeBeverage(newName.value.trim());
+  newName.value = "";
+}
+
+function showBeverage(id: string) {
+  beverageStore.showBeverage(id);
+}
+
+function deleteBeverage(id: string) {
+  beverageStore.deleteBeverage(id);
+}
 </script>
+
 
 <style lang="scss">
 body,
@@ -85,10 +159,18 @@ html {
   align-items: center;
   justify-content: center;
   height: 100%;
-  background-color: #6e4228;
   background: linear-gradient(to bottom, #6e4228 0%, #956f5a 100%);
 }
 ul {
   list-style: none;
 }
+
+.Saved {
+  display: grid;
+  grid-template-columns:  40% 10%;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 0;
+}
+
 </style>

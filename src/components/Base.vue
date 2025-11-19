@@ -1,14 +1,9 @@
 <template>
-  <div
-    class="baseBeverage"
-    :style="{ backgroundColor: beverageStore.currentBase?.color }"
-  ></div>
+  <div class="baseBeverage" :style="{'--Bcolor': Bcolor}"></div>
 </template>
 
 <script setup lang="ts">
-import { useBeverageStore } from "../stores/beverageStore";
-
-const beverageStore = useBeverageStore();
+import { Bcolor } from '../stores/beverageComputed';
 </script>
 
 <style scoped>
@@ -16,6 +11,7 @@ const beverageStore = useBeverageStore();
   position: relative;
   width: 100%;
   height: 100%;
+  background-color: var(--Bcolor);
   bottom: 0;
   animation: pour-tea 2s;
   z-index: 300;
